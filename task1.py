@@ -2,6 +2,7 @@
 import json
 import urllib.request
 import urllib.error
+from pathlib import Path
 from urllib.parse import quote
 
 from packaging.requirements import Requirement
@@ -59,20 +60,12 @@ def get_minimum_python(requires_python):
 
 
 def check_requirements():
-
-    # Take dependencies directly from terminal.
-    print("Enter dependencies (one per line).")
-    print("Type END when you have finished:\n")
-
-    lines = []
-
-    while True:
-        line = input()
-
-        if line.strip().upper() == "END":
-            break
-
-        lines.append(line)
+    requirements_path = Path(__file__).with_name("requirement.txt")
+    lines = requirements_path.read_text(encoding="utf-8").splitlines()
+    dependencies_checked = sum(
+        1 for line in lines
+        if line.strip() and not line.lstrip().startswith("#")
+    )
 
     not_found = []
     incompatible = []
@@ -162,25 +155,19 @@ def check_requirements():
                  f"Invalid Requires-Python: {error}")
             )
 
-    # Display report.
-    print("\n========== PyPI DEPENDENCY REPORT ==========\n")
-
-    print(f"Dependencies checked: {len(lines)}")
-
+    # Display the summary in the requested terminal format.
+    print(f"Dependencies Checked: {dependencies_checked}")
     print(f"Not found on PyPI: {len(not_found)}")
     print(f"Incompatible with Python 3.11: {len(incompatible)}")
-
-
-    print("\nHighest requirement:")
 
     if highest_requirement:
         minimum, package, version = highest_requirement
 
         print(
-            f"  {package}=={version}(>={minimum})"
+            f"Highest requirement: {package}=={version} (>={minimum})"
         )
     else:
-        print("  No minimum Python requirement found.")
+        print("Highest requirement: No minimum Python requirement found.")
 
     if invalid_lines:
         print("\nInvalid requirements:")
@@ -193,8 +180,6 @@ def check_requirements():
 
         for item in network_errors:
             print("  -", item)
-
-    print("\n============================================")
 
 
 if __name__ == "__main__":
